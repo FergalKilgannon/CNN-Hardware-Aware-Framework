@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 
 
-# Simple convolutional neural network architecture for CIFAR-10 (>68% accuracy)
+# Simple convolutional neural network architecture for CIFAR-10 (>64% accuracy)
 
 # Pytorch NaiveModel class
 # CONV1: 32 5x5 filters
@@ -14,9 +14,9 @@ import torch.nn.functional as F
 # MAXPOOL2
 # DROPOUT2: 0.5
 
-# FC1: 1600 -> 100 
+# FC1: 1600 -> 128 
 # RELU3
-# FC2: 100 -> 10
+# FC2: 128 -> 10
 
 # SOFTMAX
 
@@ -25,8 +25,8 @@ class NaiveModel(torch.nn.Module):
         super().__init__()
         self.conv1 = torch.nn.Conv2d(3, 32, 5)
         self.conv2 = torch.nn.Conv2d(32, 64, 5)
-        self.fc1 = torch.nn.Linear(5 * 5 * 64, 100)
-        self.fc2 = torch.nn.Linear(100, 10)
+        self.fc1 = torch.nn.Linear(5 * 5 * 64, 128)
+        self.fc2 = torch.nn.Linear(128, 10)
         self.relu1 = torch.nn.ReLU6()
         self.relu2 = torch.nn.ReLU6()
         self.relu3 = torch.nn.ReLU6()
