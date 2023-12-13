@@ -1,7 +1,7 @@
 # CNN Hardware Software Codesign
  Fergal Kilgannon ME Thesis Project 23-24
  
- Repository ia split into "Software" and "Hardware":
+ Repository is split into "Software" and "Hardware":
  
  ## SOFTWARE
  
