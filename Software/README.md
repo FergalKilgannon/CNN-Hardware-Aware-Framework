@@ -18,4 +18,4 @@ The Forward Pass notebooks are noticeably longer than the Training, as the hardw
 
 If one's aims instead were to test non-linear hardware components, the class functions following this all refer to the different layers, mimicking their hardware structure. This instance has a non-linear function (at the end of the cell), for Matrix-Vector-Multiplication. This function is called within the custom conv2d function. This can be taken out and the standard linear version swapped in easily (the linear alternative is commented out the line above the non-linear function call). Use this example as inspiration to chop-and-change wherever in the hardware.
 
-Note that while using this look-up table method of modelling non-idealities, the code will run very slowly (one iteration takes roughly 6 minutes for MNIST and 25 minutes for CIFAR-10).
+Note that while using this look-up table method of modelling non-idealities, the code will run very slowly (one iteration takes roughly 3 minutes for MNIST and 15 minutes for CIFAR-10).
