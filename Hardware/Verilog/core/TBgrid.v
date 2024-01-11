@@ -15,6 +15,9 @@ module syncRAM_tb;
   reg NEWDATA;
   reg COMP;
   reg Clk;
+  
+  reg [3:0] x;
+  reg [3:0] y;
 
 
  // Outputs
@@ -149,38 +152,133 @@ module syncRAM_tb;
    reset = 16'd0;
    #20;
    
+   
 
   // Add stimulus here
    
-   // Load in Weights
-   WEIGHT_IN(4'd0, 8'd1, 5'd0);
-   WEIGHT_IN(4'd0, 8'd2, 5'd1);
-   WEIGHT_IN(4'd0, 8'd3, 5'd2);
-   WEIGHT_IN(4'd0, 8'd0, 5'd3);
+	x = 4'd0;
+    y = 4'd0;
    
-   // Send data in and check
-   DATA_IN (4'd0, 8'd1);
-   COMPUTE (4'd0, 16'b1, 5'd0);
+   // Load in Weights (0)
+   WEIGHT_IN(x, 8'd1, 5'd0);
+   WEIGHT_IN(x, 8'd2, 5'd1);
+   WEIGHT_IN(x, 8'd3, 5'd2);
+   WEIGHT_IN(x, 8'd0, 5'd3);
+   
+   // MAC (0,0)
+   DATA_IN (y, 8'd1);
+   COMPUTE (y, x, 16'b1, 5'd0);
    #40;
-   CHECK (4'd0, 17'd1);
+   CHECK (x, 17'd1);
    #20;
    
-   DATA_IN (4'd0, 8'd0);
-   COMPUTE (4'd0, 16'b1, 5'd1);
+   DATA_IN (y, 8'd0);
+   COMPUTE (y, x, 16'b1, 5'd1);
    #40;
-   CHECK (4'd0, 17'd1);
+   CHECK (x, 17'd1);
    #20;
    
-   DATA_IN (4'd0, 8'd2);
-   COMPUTE (4'd0, 16'b1, 5'd2);
+   DATA_IN (y, 8'd2);
+   COMPUTE (y, x, 16'b1, 5'd2);
    #40;
-   CHECK (4'd0, 17'd7);
+   CHECK (x, 17'd7);
    #20;
    
-   DATA_IN (4'd0, 8'd4);
-   COMPUTE (4'd0, 16'b1, 5'd3);
+   DATA_IN (y, 8'd4);
+   COMPUTE (y, x, 16'b1, 5'd3);
    #40;
-   CHECK (4'd0, 17'd7);
+   CHECK (x, 17'd7);
+   #100;
+   
+   // MAC (0,1)
+   x = 4'd0;
+   y = 4'd1;
+   
+   DATA_IN (y, 8'd0);
+   COMPUTE (y, x, 16'b11, 5'd0);
+   DATA_IN (y, 8'd2);
+   COMPUTE (y, x, 16'b11, 5'd1);
+   #40;
+   CHECK (x, 17'd4);
+   #20;
+   
+   DATA_IN (y, 8'd4);
+   COMPUTE (y, x, 16'b11, 5'd2);
+   #40;
+   CHECK (x, 17'd16);
+   #20;
+   
+   // MAC (0,15)
+   x = 4'd0;
+   y = 4'd15;
+   
+   DATA_IN (y, 8'd0);
+   COMPUTE (y, x, 16'b1000000000000011, 5'd0);
+   DATA_IN (y, 8'd2);
+   COMPUTE (y, x, 16'b1000000000000011, 5'd1);
+   #40;
+   CHECK (x, 17'd4);
+   #20;
+   
+   DATA_IN (y, 8'd4);
+   COMPUTE (y, x, 16'b1000000000000011, 5'd2);
+   #40;
+   CHECK (x, 17'd16);
+   #20;
+   
+   x = 4'd1;
+   y = 4'd1;
+   
+   // Load in Weights (1)
+   WEIGHT_IN(x, 8'd2, 5'd0);
+   WEIGHT_IN(x, 8'd4, 5'd1);
+   WEIGHT_IN(x, 8'd100, 5'd2);
+   WEIGHT_IN(x, 8'd0, 5'd3);
+   
+   // MAC (1,1)
+   DATA_IN (y, 8'd0);
+   COMPUTE (y, x, 16'b11, 5'd1);
+   DATA_IN (y, 8'd2);
+   COMPUTE (y, x, 16'b11, 5'd3);
+   #40;
+   CHECK (x, 17'd0);
+   #20;
+   
+   DATA_IN (y, 8'd4);
+   COMPUTE (y, x, 16'b11, 5'd2);
+   #40;
+   CHECK (x, 17'd400);
+   #20;
+   
+   x = 4'd15;
+   y = 4'd15;
+   
+   // Load in Weights (15)
+   WEIGHT_IN(x, 8'd2, 5'd0);
+   WEIGHT_IN(x, 8'd4, 5'd1);
+   WEIGHT_IN(x, -8'd100, 5'd2);
+   WEIGHT_IN(x, 8'd127, 5'd3);
+   
+   // MAC (15,15)
+   DATA_IN (y, 8'd0);
+   COMPUTE (y, x, 16'b1000000000000000, 5'd1);
+   DATA_IN (y, 8'd2);
+   COMPUTE (y, x, 16'b1000000000000000, 5'd3);
+   #40;
+   CHECK (x, 17'd254);
+   #20;
+   
+   DATA_IN (y, 8'd4);
+   COMPUTE (y, x, 16'b1000000000000000, 5'd2);
+   #40;
+   CHECK (x, -17'd146);
+   #20;
+   
+   // Check when disabled
+   DATA_IN (y, 8'd8);
+   COMPUTE (y, x, 16'b0, 5'd1);
+   #40;
+   CHECK (x, -17'd146);
    #20;
    
    $display("Simulation finished with %d errors", error_count);
@@ -206,12 +304,12 @@ module syncRAM_tb;
   endtask
   
   // Task to compute MAC
-  task COMPUTE ( input [3:0] row_result, input [15:0] enableMAC, input [4:0] weightAddr);
+  task COMPUTE ( input [3:0] row_result, input [3:0] col_result, input [15:0] enableMAC, input [4:0] weightAddr);
     begin
       @ (negedge Clk) NEWDATA = 1'b1;
       addrEn = enableMAC;
       addrResult = row_result;
-      addrWeight [row_result] = weightAddr;
+      addrWeight [col_result] = weightAddr;
       @ (negedge Clk) NEWDATA = 1'b0;
     end
   endtask
@@ -222,7 +320,7 @@ module syncRAM_tb;
       @ (negedge Clk) COMP = 1'b1;
       @ (negedge Clk) COMP = 1'b0;
       @ (negedge Clk)
-    	if (dataOut[col_result] !== expected)
+      if (dataOut[col_result] !== expected)
         	begin
           		error_count = error_count + 1;
         	end
