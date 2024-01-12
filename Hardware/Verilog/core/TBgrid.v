@@ -102,7 +102,7 @@ module syncRAM_tb;
    .dataOut16(dataOut[15]),
    
    .addrEn(addrEn),
-   .addrResult(addrResult),
+   .rowResult(addrResult),
    .reset(reset),
    .WE(WE),
    .NEWDATA(NEWDATA),

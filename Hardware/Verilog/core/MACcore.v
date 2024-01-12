@@ -9,7 +9,7 @@ module MACcore( input [7:0] data1, data2, data3, data4, data5, data6, data7, dat
                output reg [16:0] dataOut1, dataOut2, dataOut3, dataOut4, dataOut5, dataOut6, dataOut7, dataOut8, dataOut9, dataOut10, dataOut11, dataOut12, dataOut13, dataOut14, dataOut15, dataOut16,
                
                 input [15:0] addrEn,
-               	input [3:0] addrResult,
+               input [3:0] rowResult,
                 input [15:0] reset,
                 input WE, NEWDATA, COMP, Clk
 );
@@ -161,7 +161,7 @@ module MACcore( input [7:0] data1, data2, data3, data4, data5, data6, data7, dat
                   dataOut [n] = 17'd0;
                 end
             	else if (COMP == 1'b1) begin
-                  dataOut [n] = outputOfMAC [addrResult] [n];
+                  dataOut [n] = outputOfMAC [rowResult] [n];
                 end
             	else begin
                   dataOut [n] = dataOut[n];	
