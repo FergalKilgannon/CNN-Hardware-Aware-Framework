@@ -101,7 +101,7 @@ module MACcore( input [7:0] data1, data2, data3, data4, data5, data6, data7, dat
       for (i=0; i<=15; i=i+1) begin: mac_array
         for (m=0; m<=15; m=m+1)
         	begin
-              digital_MAC digital_MAC(.clock(Clk), .data_in(dataToMAC[i]), .weight_in(weightToMAC[m]), .reset(reset[i]), .enable(addrEn[i]), .data_out(outputOfMAC[i][m]));
+            digital_MAC digital_MAC(.clock(Clk), .data_in(dataToMAC[i]), .weight_in(weightToMAC[m]), .reset(reset[m]), .enable(addrEn[i]), .data_out(outputOfMAC[i][m]));
       		end
       end
     endgenerate
