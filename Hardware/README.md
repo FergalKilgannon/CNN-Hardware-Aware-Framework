@@ -6,7 +6,10 @@ Directory containing all the Training and Forward-Pass end of the Hardware-Softw
 
 The grid of MACs is to be created in Verilog, where the MAC can be tested in Cadence within the context of a convolutional layer hardware, or different data-mapping strategies can be tested for power usage.
 
-![Block Diagram of Convolutional Layer Hardware](Figures/rtlLayout.png?raw=true)
+<p align="center">
+  <img src="Figures/rtlLayout.png?raw=true"  width=400">
+</p>
+
 
 The aim is to keep the grid hardware fixed, and vary the co-processor hardware for different usage.
 
