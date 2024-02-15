@@ -28,14 +28,14 @@ class NaiveModel(torch.nn.Module):
         self.relu1 = torch.nn.ReLU6()
         self.relu2 = torch.nn.ReLU6()
         self.relu3 = torch.nn.ReLU6()
-        self.avg_pool1 = torch.nn.AvgPool2d(2, 2)
-        self.avg_pool2 = torch.nn.AvgPool2d(2, 2)
+        self.max_pool1 = torch.nn.MaxPool2d(2, 2)
+        self.max_pool2 = torch.nn.MaxPool2d(2, 2)
 
     def forward(self, x):
         x = self.relu1(self.conv1(x))
-        x = self.avg_pool1(x)
+        x = self.max_pool1(x)
         x = self.relu2(self.conv2(x))
-        x = self.avg_pool2(x)
+        x = self.max_pool2(x)
         x = x.view(-1, x.size()[1:].numel())
         x = self.relu3(self.fc1(x))
         x = self.fc2(x)
