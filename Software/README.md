@@ -16,13 +16,13 @@ The datasets are trained for 10 epochs, again changeable if required in each not
 
 The notebooks for the forward pass contains reference to a forwardPass class: This is an inherited class of the hardware class. 
 
-![Class structure for the Forward Pass. The hardware class contains description of hardware for layers, quantize nodes, MACs, and arrays. The forwardPass class describes the network structure: Both layer logic and quantization node structure.](Figures/classStructure.pdf?raw=true)
+![Class structure for the Forward Pass. The hardware class contains description of hardware for layers, quantize nodes, MACs, and arrays. The forwardPass class describes the network structure: Both layer logic and quantization node structure.](Figures/classStructure.png?raw=true)
 
 The hardware class contains functions to mimic hardware: CNN Layers mapped to an array, quantize and dequantize nodes, non-ideal MACs and arrays. This class should be changed if you want to remodel the hardware functions, create new layers, or model new non-idealities.
 
 The forwardPass class contains a description of the network structure (similar to naive_.\*.py): The layer logic and the placement of quantization nodes. This is the class to change quantization level, hardware dimensions, or layer logic.
 
-![Examples of analog non-idealities](Figures/analogNonLinearity.pdf?raw=true)
+![Examples of analog non-idealities](Figures/analogNonLinearity.png?raw=true)
 
 The forward pass notebooks provide testing capability for the Hardware Aware Evaluation. The hardware class provides ability to test linear, PPQ, and mismatched arrays, with linear, gain-limited/non-linear, noisy, and custom datasheet MACs. Comments instruct the user on how to choose the setup they require, and feed in values.
 
