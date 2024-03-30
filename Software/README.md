@@ -16,13 +16,17 @@ The datasets are trained for 10 epochs, again changeable if required in each not
 
 The notebooks for the forward pass contains reference to a forwardPass class: This is an inherited class of the hardware class. 
 
-![Class structure for the Forward Pass. The hardware class contains description of hardware for layers, quantize nodes, MACs, and arrays. The forwardPass class describes the network structure: Both layer logic and quantization node structure.](Figures/classStructure.png?raw=true)
+<p align="center">
+  <img src="Figures/classStructure.png?raw=true"  width=600">
+</p>
 
 The hardware class contains functions to mimic hardware: CNN Layers mapped to an array, quantize and dequantize nodes, non-ideal MACs and arrays. This class should be changed if you want to remodel the hardware functions, create new layers, or model new non-idealities.
 
 The forwardPass class contains a description of the network structure (similar to naive_.\*.py): The layer logic and the placement of quantization nodes. This is the class to change quantization level, hardware dimensions, or layer logic.
 
-![Examples of analog non-idealities](Figures/analogNonLinearity.png?raw=true)
+<p align="center">
+  <img src="Figures/analogNonLinearity.png?raw=true"  width=600">
+</p>
 
 The forward pass notebooks provide testing capability for the Hardware Aware Evaluation. The hardware class provides ability to test linear, PPQ, and mismatched arrays, with linear, gain-limited/non-linear, noisy, and custom datasheet MACs. Comments instruct the user on how to choose the setup they require, and feed in values.
 
@@ -32,8 +36,12 @@ Note the files prefixed with "SINGLE_NB_", these are old versions of the forward
 
 When using [Google Colab](https://colab.research.google.com/drive/1vEENyFYD09R2yWCXvbNjc2Sqhw4Rlqbs?usp=sharing), it is important to run the forward pass on a CPU runtime (GPUs will not work with the hardware class). 
 
-![Connecting to CPU runtime on Google Colab](Figures/colabRuntime.png?raw=true)
+<p align="center">
+  <img src="Figures/colabRuntime.png?raw=true"  width=600">
+</p>
 
 Be sure to begin the notebook with a cell containing "*!pip install nni==2.10.1*" to install the correct version of NNI. Using the Files tab on the left side of the screen, upload the files needed (hardware class, forward pass class, quantized network model, naive model).
 
-![Install NNI and upload correct files](Figures/colabFiles.png?raw=true)
+<p align="center">
+  <img src="Figures/colabFiles.png?raw=true"  width=600">
+</p>
