@@ -42,13 +42,13 @@ class hardware:
 
     # -------------------- CONVOLUTIONAL LAYER -------------------- #
 
-    def conv2d(self, x, batch, conv, s_in, idim, ifmap, ofmap, knl):
+    def conv2d(self, x, batch, conv, s_in, idim, ifmap, ofmap, knl, padding=0):
         # Scale input image, conv weight and bias to bits used
         sw_conv, filters_conv = self.scale_quant(conv.weight.cpu(), self.num_bits)
         bias_conv = conv.bias / (s_in * sw_conv)
 
         # CONV layer (WSAB dataflow - see convolve2D_wsab function)
-        out_conv = self.convolve2D_wsab(x, filters_conv, bias_conv, 0, self.stride, batch, ifmap, ofmap, idim, knl, self.ncol, self.nrow)
+        out_conv = self.convolve2D_wsab(x, filters_conv, bias_conv, padding, self.stride, batch, ifmap, ofmap, idim, knl, self.ncol, self.nrow)
         out_conv = torch.from_numpy(out_conv)
         out_conv = out_conv.to(self.device)
 
@@ -71,14 +71,14 @@ class hardware:
         block_col = int(np.ceil(ofmap/ncol))
         block_row = int(np.ceil(knl*knl*ifmap/nrow))
         kernel_flat = np.zeros((block_col*ncol, block_row*nrow))
-
+        
         kernel_flat[0:ofmap,0:ifmap*knl*knl] = torch.reshape(kernel, [ofmap, ifmap*knl*knl]).cpu().numpy()
         # Process image by image
         for b in range(batch):
             # Apply Equal Padding to All Sides
             if padding != 0:
-                imagePadded = np.zeros((idim + padding * 2, idim + padding * 2))
-                imagePadded[int(padding):int(-1 * padding), int(padding):int(-1 * padding)] = image[b]
+                imagePadded = torch.zeros(ifmap, idim + padding * 2, idim + padding * 2)
+                imagePadded[:, int(padding):int(-1 * padding), int(padding):int(-1 * padding)] = image[b]
             else:
                 imagePadded = image[b]
 
@@ -125,19 +125,18 @@ class hardware:
 
     # -------------------- MAXPOOL LAYER -------------------- #
 
-    def maxpool2d(self, x, batch, idim, ofmap, knl):
+    def maxpool2d(self, x, batch, idim, ofmap, knl, padding=0):
         # Maxpool layer - downsample by knl x knl with maxpool (no quantization required for max function)
-        return torch.from_numpy(self.maxpool2D_wsa(batch, x, idim, ofmap, knl))
+        return torch.from_numpy(self.maxpool2D_wsa(batch, x, idim, ofmap, knl, padding))
 
 
     # Maxpool layer on digital hardware
-    def maxpool2D_wsa(self, batch, image, idim, ofmap, knl):
+    def maxpool2D_wsa(self, batch, image, idim, ofmap, knl, padding):
         xKernShape = knl
         yKernShape = knl
         xImgShape = idim
         yImgShape = idim
         strides = knl
-        padding = 0
         # Shape of Output Convolution
         xOutput = int(((xImgShape - xKernShape + 2 * padding) / strides) + 1)
         yOutput = int(((yImgShape - yKernShape + 2 * padding) / strides) + 1)
@@ -146,8 +145,8 @@ class hardware:
         for b in range(batch):
             # Apply Equal Padding to All Sides
             if padding != 0:
-                imagePadded = np.zeros((idim + padding * 2, idim + padding * 2))
-                imagePadded[int(padding):int(-1 * padding), int(padding):int(-1 * padding)] = image[b]
+                imagePadded = torch.zeros(ofmap, idim + padding * 2, idim + padding * 2)
+                imagePadded[:, int(padding):int(-1 * padding), int(padding):int(-1 * padding)] = image[b]
             else:
                 imagePadded = image[b]
 
@@ -162,19 +161,19 @@ class hardware:
 
     # -------------------- AVERAGE-POOL LAYER -------------------- #
 
-    def avgpool2d(self, x, batch, idim, ofmap, knl):
+    def avgpool2d(self, x, batch, idim, ofmap, knl, padding=0):
         # Avgpool layer - downsample by knl x knl with avgpool (no quantization required for max function)
-        return torch.from_numpy(self.avgpool2D_wsa(batch, x, idim, ofmap, knl))
+        return torch.from_numpy(self.avgpool2D_wsa(batch, x, idim, ofmap, knl, padding))
   
 
     # Average-Pool layer on array with WS mapping
-    def avgpool2D_wsa(self, batch, image, idim, ofmap, knl):
+    def avgpool2D_wsa(self, batch, image, idim, ofmap, knl, padding):
         xKernShape = knl
         yKernShape = knl
         xImgShape = idim
         yImgShape = idim
         strides = knl
-        padding = 0
+
         # Shape of Output Convolution
         xOutput = int(((xImgShape - xKernShape + 2 * padding) / strides) + 1)
         yOutput = int(((yImgShape - yKernShape + 2 * padding) / strides) + 1)
@@ -183,8 +182,8 @@ class hardware:
         for b in range(batch):
             # Apply Equal Padding to All Sides
             if padding != 0:
-                imagePadded = np.zeros((idim + padding * 2, idim + padding * 2))
-                imagePadded[int(padding):int(-1 * padding), int(padding):int(-1 * padding)] = image[b]
+                imagePadded = torch.zeros(ofmap, idim + padding * 2, idim + padding * 2)
+                imagePadded[:, int(padding):int(-1 * padding), int(padding):int(-1 * padding)] = image[b]
             else:
                 imagePadded = image[b]
 
