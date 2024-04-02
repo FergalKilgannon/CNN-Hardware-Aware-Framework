@@ -4,13 +4,11 @@ Directory containing all the Training and Forward-Pass end of the Hardware-Softw
 
 ## Training
 
-Both the MNIST and CIFAR-10 CNNs share a similar structure: two convolutional layers, each with a ReLU and Maxpool layer, followed by two Fully Connected layers. The only difference is the CIFAR-10 CNN also has Dropout layers after each Maxpool layer. This structure is contained in the naive_.\*.py files.
-
-![MNIST and CIFAR-10 CNN Structures](Figures/CNNstructComp.png?raw=true)
+Repos contain two similar simple networks (MNIST ~98% and CIFAR-10 ~62%) and a more complex network (CIFAR-10 ~80%). The structure of these networks are contained in the naive_.\*.py files.
 
 The code is mostly generalized for ease of switching between datasets, but note a few small changes may be present if you decide to extend to a different dataset. For  instance, the targets for the MNIST dataset are held in a tensor, while for CIFAR-10 they are held in a list.
 
-The datasets are trained for 10 epochs, again changeable if required in each notebook. The trained model will be outputted as .\*_model.pth. This model is what will be read in by the Forward Pass.
+Number of epochs to train for set in the notebooks. The trained model will be outputted as .\*_model.pth. This model is what will be read in by the Forward Pass.
 
 ## Forward Pass Classes
 
