@@ -43,3 +43,5 @@ Be sure to begin the notebook with a cell containing "*!pip install nni==2.10.1*
 <p align="center">
   <img src="Figures/colabFiles.png?raw=true"  width=600">
 </p>
+
+Google Colab allows use of GPUs, which massively speeds up training notebooks. Since no parallelism is utilised in the forward_pass class, use the CPU options to run their notebooks, as it will run at a similar speed without the pitfalls of limited usage times on the free Colab version.
