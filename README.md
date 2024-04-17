@@ -1,4 +1,4 @@
-# CNN Hardware Software Codesign
+# CNN Hardware Aware Framework
 Fergal Kilgannon ME Thesis Project 23-24
  
 Repository is split into "Software" and "Hardware". More information on each is available in READMEs conatined in the respective directories.
