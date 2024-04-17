@@ -111,6 +111,67 @@ class hardware:
 
             output[b] = torch.sum(otemp[:, 0:ofmap, :, :], dim=0) + (bias.reshape(ofmap, 1, 1).cpu()*torch.ones(xOutput, yOutput)).detach().numpy()
         return output
+    
+
+    # Convolutional layer on array with OS mapping
+    def convolve2D_osab(self, image, kernel, bias, padding, strides, batch, ncol, nrow):
+    
+        ofmap = kernel.shape[0]
+        xKnl = kernel.shape[3]
+        yKnl = kernel.shape[2]
+
+        ifmap = image.shape[1]
+        xImg = image.shape[3]
+        yImg = image.shape[2]
+
+        # Shape of Output Convolution
+        xOutput = int(((xImg - xKnl + 2 * padding) / strides) + 1)
+        yOutput = int(((yImg - yKnl + 2 * padding) / strides) + 1)
+        output = np.zeros((batch, ofmap, xOutput, yOutput))
+    
+        # Number of output block partitions to fit into hardware
+        block_col = int(np.ceil(xOutput/ncol))
+        block_row = int(np.ceil(yKnl*xKnl*ifmap/nrow))
+
+        kernel_flat = np.zeros((ofmap, block_row*nrow))
+        kernel_flat[0:ofmap, 0:ifmap*yKnl*xKnl] = torch.reshape(kernel, [ofmap, ifmap*yKnl*xKnl]).cpu().numpy()
+
+        # Process image by image
+        for b in range(batch):
+            # Apply Equal Padding to All Sides
+            if padding != 0:
+                imagePadded = np.zeros((xImg + padding * 2, yImg + padding * 2))
+                imagePadded[int(padding):int(-1 * padding), int(padding):int(-1 * padding)] = image[b]
+            else:
+                imagePadded = image[b]
+
+            image_block = np.zeros((nrow*block_row, ncol*block_col, yOutput))
+            otemp = torch.zeros((block_row, ofmap, ncol*block_col, yOutput))
+
+            for y in range(yOutput):
+                for x in range(xOutput):
+                    image_block[0:xKnl * yKnl * ifmap, x, y] = imagePadded[0:ifmap,
+                                                                strides * x: strides * x + xKnl,
+                                                                strides * y: strides * y + yKnl].reshape(
+                            xKnl * yKnl * ifmap).cpu().numpy()
+
+            # Iterate through image
+            for y in range(yOutput):
+                for bc in range(block_col):
+                    for br in range(block_row):
+                        for kerCol in range(ofmap):
+                            ktemp = kernel_flat[kerCol, br*nrow:(br+1)*nrow]
+                            ktemp = torch.from_numpy(ktemp)
+                            for x in range(ncol):
+                                # Fetch image section x,y, bc,br
+                                itemp = image_block[br*nrow:(br+1)*nrow, (bc*ncol)+x, y].reshape(1, nrow)
+                                itemp = torch.from_numpy(itemp)
+                                # Replace this line with Arduino SPI function call
+                                otemp[br, kerCol, (bc*ncol)+x, y] = self.array_fn(ktemp, itemp, dim=1)
+                                # print("Batch:%d,BROW:%d,BCOL:%d,X:%d,Y:%d" % (b,br,bc,x,y))
+            output[b] = torch.sum(otemp[:, :, 0:xOutput, :], dim=0) + (bias.reshape(ofmap, 1, 1).cpu()*torch.ones(xOutput, yOutput)).detach().numpy()
+
+        return output
 
 
 
