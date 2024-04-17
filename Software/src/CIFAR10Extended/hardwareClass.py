@@ -42,13 +42,13 @@ class hardware:
 
     # -------------------- CONVOLUTIONAL LAYER -------------------- #
 
-    def conv2d(self, x, batch, conv, s_in, idim, ifmap, ofmap, knl, padding=0):
+    def conv2d(self, x, batch, conv, s_in, padding=0):
         # Scale input image, conv weight and bias to bits used
         sw_conv, filters_conv = self.scale_quant(conv.weight.cpu(), self.num_bits)
         bias_conv = conv.bias / (s_in * sw_conv)
 
         # CONV layer (WSAB dataflow - see convolve2D_wsab function)
-        out_conv = self.convolve2D_wsab(x, filters_conv, bias_conv, padding, self.stride, batch, ifmap, ofmap, idim, knl, self.ncol, self.nrow)
+        out_conv = self.convolve2D_wsab(x, filters_conv, bias_conv, padding, self.stride, batch, self.ncol, self.nrow)
         out_conv = torch.from_numpy(out_conv)
         out_conv = out_conv.to(self.device)
 
@@ -56,28 +56,32 @@ class hardware:
         return out_conv * s_in * sw_conv
 
     # Convolutional layer on array with WS mapping
-    def convolve2D_wsab(self, image, kernel, bias, padding, strides, batch, ifmap, ofmap, idim, knl, ncol, nrow):
-        xKernShape = knl
-        yKernShape = knl
-        xImgShape = idim
-        yImgShape = idim
+    def convolve2D_wsab(self, image, kernel, bias, padding, strides, batch, ncol, nrow):
+    
+        ofmap = kernel.shape[0]
+        xKnl = kernel.shape[3]
+        yKnl = kernel.shape[2]
+
+        ifmap = image.shape[1]
+        xImg = image.shape[3]
+        yImg = image.shape[2]
 
         # Shape of Output Convolution
-        xOutput = int(((xImgShape - xKernShape + 2 * padding) / strides) + 1)
-        yOutput = int(((yImgShape - yKernShape + 2 * padding) / strides) + 1)
+        xOutput = int(((xImg - xKnl + 2 * padding) / strides) + 1)
+        yOutput = int(((yImg - yKnl + 2 * padding) / strides) + 1)
         output = np.zeros((batch, ofmap, xOutput, yOutput))
 
         # Number of weight block partitions to fit into hardware
         block_col = int(np.ceil(ofmap/ncol))
-        block_row = int(np.ceil(knl*knl*ifmap/nrow))
+        block_row = int(np.ceil(yKnl*xKnl*ifmap/nrow))
         kernel_flat = np.zeros((block_col*ncol, block_row*nrow))
         
-        kernel_flat[0:ofmap,0:ifmap*knl*knl] = torch.reshape(kernel, [ofmap, ifmap*knl*knl]).cpu().numpy()
+        kernel_flat[0:ofmap,0:ifmap*yKnl*xKnl] = torch.reshape(kernel, [ofmap, ifmap*yKnl*xKnl]).cpu().numpy()
         # Process image by image
         for b in range(batch):
             # Apply Equal Padding to All Sides
             if padding != 0:
-                imagePadded = torch.zeros(ifmap, idim + padding * 2, idim + padding * 2)
+                imagePadded = torch.zeros(ifmap, xImg + padding * 2, yImg + padding * 2)
                 imagePadded[:, int(padding):int(-1 * padding), int(padding):int(-1 * padding)] = image[b]
             else:
                 imagePadded = image[b]
@@ -94,10 +98,10 @@ class hardware:
                     for y in range(yOutput):
                         for x in range(xOutput):
                             # Fetch image section x,y, bc,br
-                            image_block[0:knl * knl * ifmap, x, y] = imagePadded[0:ifmap,
-                                                                        strides * x: strides * x + xKernShape,
-                                                                        strides * y: strides * y + yKernShape].reshape(
-                                knl * knl * ifmap).cpu().numpy()
+                            image_block[0:yKnl * xKnl * ifmap, x, y] = imagePadded[0:ifmap,
+                                                                        strides * x: strides * x + xKnl,
+                                                                        strides * y: strides * y + yKnl].reshape(
+                                yKnl * xKnl * ifmap).cpu().numpy()
 
                             itemp = image_block[br*nrow:(br+1)*nrow, x, y].reshape(nrow)
                             itemp = torch.from_numpy(itemp)
@@ -112,7 +116,9 @@ class hardware:
 
     # -------------------- RELU LAYER -------------------- #
 
-    def relu6(self, x, min_val, max_val, relu_module):
+    def relu6(self, x, relu_module):
+        min_val = 0
+        max_val = 6
         i = (x >= min_val) * x
         out_relu = (i <= max_val) * (i - max_val) + max_val
         so_relu = relu_module.output_scale
@@ -125,27 +131,28 @@ class hardware:
 
     # -------------------- MAXPOOL LAYER -------------------- #
 
-    def maxpool2d(self, x, batch, idim, ofmap, knl, padding=0):
+    def maxpool2d(self, x, batch, knl, padding=0):
         # Maxpool layer - downsample by knl x knl with maxpool (no quantization required for max function)
-        return torch.from_numpy(self.maxpool2D_wsa(batch, x, idim, ofmap, knl, padding))
+        return torch.from_numpy(self.maxpool2D_wsa(batch, x, knl, padding))
 
 
     # Maxpool layer on digital hardware
-    def maxpool2D_wsa(self, batch, image, idim, ofmap, knl, padding):
-        xKernShape = knl
-        yKernShape = knl
-        xImgShape = idim
-        yImgShape = idim
+    def maxpool2D_wsa(self, batch, image, knl, padding):
+
+        xImg = image.shape[3]
+        yImg = image.shape[2]
+        ofmap = image.shape[1]
         strides = knl
+
         # Shape of Output Convolution
-        xOutput = int(((xImgShape - xKernShape + 2 * padding) / strides) + 1)
-        yOutput = int(((yImgShape - yKernShape + 2 * padding) / strides) + 1)
+        xOutput = int(((xImg - knl + 2 * padding) / strides) + 1)
+        yOutput = int(((yImg - knl + 2 * padding) / strides) + 1)
         output = np.zeros((batch, ofmap, xOutput, yOutput))
 
         for b in range(batch):
             # Apply Equal Padding to All Sides
             if padding != 0:
-                imagePadded = torch.zeros(ofmap, idim + padding * 2, idim + padding * 2)
+                imagePadded = torch.zeros(ofmap, xImg + padding * 2, yImg + padding * 2)
                 imagePadded[:, int(padding):int(-1 * padding), int(padding):int(-1 * padding)] = image[b]
             else:
                 imagePadded = image[b]
@@ -154,35 +161,34 @@ class hardware:
             for y in range(yOutput):
                 for x in range(xOutput):
                     output[b, :, x, y] = torch.amax(
-                            imagePadded[:, strides * x: strides * x + xKernShape, strides * y: strides * y + yKernShape], dim=(1,2)).detach().cpu().numpy()
+                            imagePadded[:, strides * x: strides * x + knl, strides * y: strides * y + knl], dim=(1,2)).detach().cpu().numpy()
         return output
 
 
 
     # -------------------- AVERAGE-POOL LAYER -------------------- #
 
-    def avgpool2d(self, x, batch, idim, ofmap, knl, padding=0):
+    def avgpool2d(self, x, batch, ofmap, knl, padding=0):
         # Avgpool layer - downsample by knl x knl with avgpool (no quantization required for max function)
-        return torch.from_numpy(self.avgpool2D_wsa(batch, x, idim, ofmap, knl, padding))
+        return torch.from_numpy(self.avgpool2D_wsa(batch, x, ofmap, knl, padding))
   
 
     # Average-Pool layer on array with WS mapping
-    def avgpool2D_wsa(self, batch, image, idim, ofmap, knl, padding):
-        xKernShape = knl
-        yKernShape = knl
-        xImgShape = idim
-        yImgShape = idim
+    def avgpool2D_wsa(self, batch, image, ofmap, knl, padding):
+        
+        xImg = image.shape[3]
+        yImg = image.shape[2]
         strides = knl
 
         # Shape of Output Convolution
-        xOutput = int(((xImgShape - xKernShape + 2 * padding) / strides) + 1)
-        yOutput = int(((yImgShape - yKernShape + 2 * padding) / strides) + 1)
+        xOutput = int(((xImg - knl + 2 * padding) / strides) + 1)
+        yOutput = int(((yImg - knl + 2 * padding) / strides) + 1)
         output = np.zeros((batch, ofmap, xOutput, yOutput))
 
         for b in range(batch):
             # Apply Equal Padding to All Sides
             if padding != 0:
-                imagePadded = torch.zeros(ofmap, idim + padding * 2, idim + padding * 2)
+                imagePadded = torch.zeros(ofmap, xImg + padding * 2, yImg + padding * 2)
                 imagePadded[:, int(padding):int(-1 * padding), int(padding):int(-1 * padding)] = image[b]
             else:
                 imagePadded = image[b]
@@ -191,15 +197,15 @@ class hardware:
             for y in range(yOutput):
                 for x in range(xOutput):
                     for channel in range(ofmap):
-                        output[b, channel, x, y] = self.array_fn(imagePadded[channel, strides * x: strides * x + xKernShape, strides * y: strides * y + yKernShape].reshape(knl*knl),
-                                                                        torch.ones(xKernShape*yKernShape))/(knl*knl)
+                        output[b, channel, x, y] = self.array_fn(torch.ones(knl*knl), 
+                                                                 imagePadded[channel, strides * x: strides * x + knl, strides * y: strides * y + knl].reshape(knl*knl))/(knl*knl)
         return output
 
 
 
     # -------------------- FULLY-CONNECTED LAYER -------------------- #
 
-    def fc(self, x, batch, module, odim):
+    def fc(self, x, batch, module):
         sin_fc = module.input_scale.cpu()
         in_fcs = self.noscale_quant(x, sin_fc, 0, self.num_bits)
         sw_fc, filters_fc = self.scale_quant(module.weight.cpu(), self.num_bits)
@@ -207,7 +213,7 @@ class hardware:
 
 
         # FC layer using (WS dataflow)
-        out_fc = torch.from_numpy(self.fc_on_array(in_fcs, filters_fc, bias_fc, batch, odim, self.ncol, self.nrow))
+        out_fc = torch.from_numpy(self.fc_on_array(in_fcs, filters_fc, bias_fc, batch, self.ncol, self.nrow))
 
         # FC output scaling
         out_fcs = out_fc * sin_fc * sw_fc
@@ -218,7 +224,8 @@ class hardware:
   
 
     # Fully-Connected layer on array with WS mapping
-    def fc_on_array(self, fc_input, filters, bias, batch, ofmap, ncol, nrow):
+    def fc_on_array(self, fc_input, filters, bias, batch, ncol, nrow):
+        ofmap = filters.shape[0]
         output = np.zeros((batch, ofmap))
         for b in range(batch):
             # Iterate through image

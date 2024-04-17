@@ -11,7 +11,6 @@ class forwardPass(hardware):
         stride = 1                      # Convolutional stride
         ncol = 16                       # Number of hardware columns
         nrow = 32                       # Number of hardware rows
-        self.knl = 5                    # Kernel size (declared here to automate layer output image sizes below)
 
         self.idim = idim                # Input image dimensions (found from data) 
         self.ifmap = ifmap              # Input image channels (found from data)
@@ -25,34 +24,34 @@ class forwardPass(hardware):
         s_in, x = self.scale_quant(data, self.num_bits)
         
         # Convolutional layer 1
-        x = self.conv2d(x, batch, self.model.conv1.module, s_in, self.idim, 1, 16, self.knl)
+        x = self.conv2d(x, batch, self.model.conv1.module, s_in)
 
         # ReLU 1
-        x = self.relu6(x, 0, 6, self.model.relu1.module)
+        x = self.relu6(x, self.model.relu1.module)
 
         # Maxpool layer 1
-        x = self.maxpool2d(x, batch, self.idim - self.knl + 1, 16, 2)
+        x = self.maxpool2d(x, batch, 2)
         
         # Scale for convolutional layer 2
         sin_conv2 = self.model.conv2.module.input_scale
         x = self.noscale_quant(x, sin_conv2.cpu(), 0, self.num_bits)
-        x = self.conv2d(x, batch, self.model.conv2.module, sin_conv2, (self.idim-self.knl+1)/2, 16, 32, self.knl)
+        x = self.conv2d(x, batch, self.model.conv2.module, sin_conv2)
 
         # ReLU 2
-        x = self.relu6(x, 0, 6, self.model.relu2.module)
+        x = self.relu6(x, self.model.relu2.module)
 
         # Maxpool layer 2
-        x = self.maxpool2d(x, batch, ((self.idim - self.knl+1)/2) - self.knl + 1, 32, 2)
+        x = self.maxpool2d(x, batch, 2)
 
         # Fully connected layer 1
         x = x.view(-1, x.size()[1:].numel())  # Flatten outputs of out_maxpool2 layer to feed to FC layers.
-        x = self.fc(x, batch, self.model.fc1.module, 50)
+        x = self.fc(x, batch, self.model.fc1.module)
 
         # ReLU 3
-        x = self.relu6(x, 0, 6, self.model.relu3.module)
+        x = self.relu6(x, self.model.relu3.module)
 
         # Fully connected layer 2
-        x = self.fc(x.cpu(), batch, self.model.fc2.module, 10)
+        x = self.fc(x.cpu(), batch, self.model.fc2.module)
 
         # Softmax layer
         return F.log_softmax(x, dim=1)
