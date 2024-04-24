@@ -11,6 +11,6 @@ A third directory named "HardwareSpec" contains spreadsheets mapping the outputs
 
 ## HARDWARE
 
-The hardware directory has a Hardware Mapping, Verilog, and PYNQ directory. The HardwareMapping directory contains a notebook with functions to test different mapping techniques, and plots the results.
+The hardware directory has a Hardware Mapping, Verilog, and PYNQ directory. The HardwareMapping directory contains a notebook and hardwareTests class to test different mapping techniques, and plot the results.
 
 The Verilog and PYNQ directories have starter code for further work: The former with .V files describing the grid hardware, and the latter with the Python notebooks to control the CNN on a PYNQ board. This latter contains a notebook *ForwardPass.ipynb* which can run a single MNIST forward-pass using input from the user, and is good for use in monitoring data movement of the network.

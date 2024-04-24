@@ -2,6 +2,10 @@
 
 Directory containing all the Training and Forward-Pass end of the Hardware-Software Structure
 
+## Mapping
+
+A Python class named hardwareTests provides lightweight testing capabilities. The forward-pass for any network can be modelled in the class, and an example notebook is provided to demonstrate how this class can be used for testing. Note that the mapping techniques are only relevant for the convolutional layers, so the only modelling to be done in the class is for these layers, and rescaling between them (pooling, padding, etc.).
+
 ## Verilog
 
 The grid of MACs is to be created in Verilog, where the MAC can be tested in Cadence within the context of a convolutional layer hardware, or different data-mapping strategies can be tested for power usage.
