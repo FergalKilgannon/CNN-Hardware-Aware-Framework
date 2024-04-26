@@ -363,7 +363,7 @@ class hardware:
 
 
     # Non-linear look-up
-    def from_table(self, kernel, image):
+    def from_table(self, kernel, image, col=0, dim=0):
         output = np.empty(len(kernel))
         if len(kernel.shape) == 2:
             for i in range(len(kernel)):
@@ -374,7 +374,7 @@ class hardware:
             return output
         
     # Excel lookup table
-    def lookup_table(self, kernel, image, col=0, dim=0):
+    def lookup_table(self, kernel, image):
         sum = 0
         if self.num_bits == 9 or self.num_bits == 8:
             bit = 9
