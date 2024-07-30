@@ -1,5 +1,12 @@
 # CNN Hardware Aware Framework
 Fergal Kilgannon ME Thesis Project 23-24
+
+To use this framework, please cite:
+
+**F. Kilgannon, S. Kumar, V. Nguyen, T. Siriburanon, R. B. Staszewski, "Modelling, Data Mapping, and Evaluation of Analog Multiply-And-Accumulate Components in Quantized CNNs," IEEE ISSC, vol. 35, Jun. 2024, doi: 10.1109/ISSC61953.2024.10603107.**
+
+Found at:
+https://ieeexplore.ieee.org/document/10603107
  
 Repository is split into "Software" and "Hardware". More information on each is available in READMEs conatined in the respective directories.
  
